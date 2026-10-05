@@ -129,6 +129,11 @@ textarea{resize:vertical;min-height:56px}
 .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .seg button{flex:1;border:0;background:var(--bg);padding:8px;cursor:pointer;font-size:14px}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:5px 12px;cursor:pointer;font-size:14px}
+.chip::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--cc)}
+.chip[aria-pressed="true"]{border-color:var(--ink);background:var(--surface);font-weight:600}
+.auto-hint{font-weight:500;color:var(--accent-text);margin-left:4px}
 .actions{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .btn{border-radius:8px;padding:9px 16px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-weight:600}
 .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
@@ -214,7 +219,13 @@ textarea{resize:vertical;min-height:56px}
           </div>
           <div class="f"><label for="f-date">날짜</label><input id="f-date" type="date" required></div>
           <div class="f"><label for="f-time">시간 (선택)</label><input id="f-time" type="time"></div>
-          <div class="f full"><label for="f-cat">분류</label><input id="f-cat" list="cats" maxlength="24" placeholder="예: 영상편집, 학교, 개인"><datalist id="cats"></datalist></div>
+          <div class="f full"><label for="f-cat">분류 <span class="auto-hint" id="catHint"></span></label>
+            <div class="chips" role="group" aria-label="분류 고르기">
+              <button type="button" class="chip" data-cat="영상" style="--cc:var(--cat-video)" aria-pressed="false">영상</button>
+              <button type="button" class="chip" data-cat="약속" style="--cc:var(--cat-appt)" aria-pressed="false">약속</button>
+              <button type="button" class="chip" data-cat="인스타툰" style="--cc:var(--cat-insta)" aria-pressed="false">인스타툰</button>
+            </div>
+            <input id="f-cat" list="cats" maxlength="24" placeholder="다른 분류는 직접 입력"><datalist id="cats"></datalist></div>
           <div class="f full"><label for="f-note">메모</label><textarea id="f-note" maxlength="400"></textarea></div>
           <div class="actions">
             <button class="btn primary" type="submit" id="saveBtn">추가</button>
@@ -435,9 +446,39 @@ function render(){ renderStats(); renderUpcoming(); renderCal(); renderDay(); re
 
 /* Form */
 function setKind(k){ S.kind = k; for (const b of document.querySelectorAll('.seg button')) b.setAttribute('aria-pressed', String(b.dataset.kind === k)); }
+/* 분류: 기본 칩 3개 + 직접 입력. 제목을 보고 자동으로 고르되, 직접 고르면 그 뒤로는 건드리지 않는다 */
+const AUTO_CATS = [
+  ['인스타툰', ['인스타툰', '인스타', '툰', '웹툰', '콘티', '작화', '원고', '연재', '컷툰']],
+  ['영상', ['영상', '촬영', '편집', '납품', '촬영본', '편집본', '렌더', '자막', '색보정', '썸네일', '유튜브', '브이로그', '시사', '컨펌']],
+  ['약속', ['약속', '만남', '만나', '미팅', '모임', '저녁', '점심', '브런치', '카페', '생일', '데이트', '병원', '치과', '상담']]
+];
+function guessCat(title){
+  const t = (title || '').replace(/\s+/g, '');
+  for (const [cat, words] of AUTO_CATS) if (words.some(w => t.includes(w))) return cat;
+  return '';
+}
+function syncChips(){
+  const v = $('f-cat').value.trim();
+  for (const c of document.querySelectorAll('.chip')) c.setAttribute('aria-pressed', String(c.dataset.cat === v));
+}
+function autoCat(){
+  if (S.catManual) return;
+  const g = guessCat($('f-title').value);
+  $('f-cat').value = g; syncChips();
+  $('catHint').textContent = g ? '· 자동 분류' : '';
+}
+for (const c of document.querySelectorAll('.chip')) c.addEventListener('click', () => {
+  const on = $('f-cat').value.trim() === c.dataset.cat;
+  $('f-cat').value = on ? '' : c.dataset.cat;
+  S.catManual = true; $('catHint').textContent = ''; syncChips();
+});
+$('f-cat').addEventListener('input', () => { S.catManual = $('f-cat').value.trim() !== ''; $('catHint').textContent = ''; syncChips(); });
+$('f-title').addEventListener('input', autoCat);
+
 function resetForm(date){
-  S.editing = null; S.armDelete = false;
+  S.editing = null; S.armDelete = false; S.catManual = false;
   $('form').reset(); $('f-date').value = date || S.selected || todayStr; setKind('deadline');
+  syncChips(); $('catHint').textContent = '';
   $('saveBtn').textContent = '추가'; $('cancelBtn').hidden = true; $('delBtn').hidden = true;
   $('delBtn').classList.remove('armed'); $('delBtn').textContent = '삭제';
   $('h-form').textContent = '일정 추가'; $('formMode').textContent = '';
@@ -446,6 +487,7 @@ function startEdit(e){
   S.editing = e.id; S.armDelete = false;
   $('f-title').value = e.title || ''; $('f-date').value = e.date; $('f-time').value = e.time || '';
   $('f-cat').value = e.category || ''; $('f-note').value = e.note || ''; setKind(e.kind === 'event' ? 'event' : 'deadline');
+  S.catManual = !!e.category; syncChips(); $('catHint').textContent = '';
   $('saveBtn').textContent = '저장'; $('cancelBtn').hidden = false; $('delBtn').hidden = false;
   $('delBtn').classList.remove('armed'); $('delBtn').textContent = '삭제';
   $('h-form').textContent = '일정 수정'; $('formMode').textContent = fmtDate(e.date);
