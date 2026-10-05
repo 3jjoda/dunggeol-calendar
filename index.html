@@ -15,7 +15,8 @@
   --bg:#EEF1F5; --surface:#FFFFFF; --ink:#141C29; --muted:#5A6577; --line:#D8DEE7;
   --accent:#F6B8CB; --accent-ink:#4A1830; --accent-soft:#FCE8EF; --accent-text:#B23A66;
   --urgent:#BE3127; --urgent-soft:#FBE6E3; --soon:#9A6100; --soon-soft:#FAEFD6; --calm:#3A6E55; --calm-soft:#E2F0E8;
-  --c0:#2C47B0; --c1:#17806F; --c2:#7E47BC; --c3:#B85A22; --c4:#AE3466; --c5:#55731B;
+  --c0:#2C47B0; --c1:#17806F; --c2:#5FA82A; --c3:#B85A22; --c4:#AE3466; --c5:#55731B;
+  --cat-video:#6CB524; --cat-appt:#E2B100; --cat-insta:#111111;
   --font-body:"IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   --font-num:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
   --r:10px;
@@ -24,13 +25,15 @@
   --bg:#0F141C; --surface:#171E29; --ink:#E7ECF3; --muted:#97A2B4; --line:#2A3443;
   --accent:#F4AFC6; --accent-ink:#2A0E1A; --accent-soft:#3A2030; --accent-text:#F4AFC6;
   --urgent:#FF8A7E; --urgent-soft:#3A1E1C; --soon:#F2C062; --soon-soft:#352A14; --calm:#7FCBA4; --calm-soft:#16301F;
-  --c0:#8EA6F5; --c1:#5CCDB9; --c2:#C19BF0; --c3:#F2A06E; --c4:#F08AB3; --c5:#B3D46A;
+  --c0:#8EA6F5; --c1:#5CCDB9; --c2:#9BD65E; --c3:#F2A06E; --c4:#F08AB3; --c5:#B3D46A;
+  --cat-video:#A3DE5C; --cat-appt:#F5D33F; --cat-insta:#ECECEC;
   color-scheme:dark }}
 :root[data-theme="dark"]{
   --bg:#0F141C; --surface:#171E29; --ink:#E7ECF3; --muted:#97A2B4; --line:#2A3443;
   --accent:#F4AFC6; --accent-ink:#2A0E1A; --accent-soft:#3A2030; --accent-text:#F4AFC6;
   --urgent:#FF8A7E; --urgent-soft:#3A1E1C; --soon:#F2C062; --soon-soft:#352A14; --calm:#7FCBA4; --calm-soft:#16301F;
-  --c0:#8EA6F5; --c1:#5CCDB9; --c2:#C19BF0; --c3:#F2A06E; --c4:#F08AB3; --c5:#B3D46A;
+  --c0:#8EA6F5; --c1:#5CCDB9; --c2:#9BD65E; --c3:#F2A06E; --c4:#F08AB3; --c5:#B3D46A;
+  --cat-video:#A3DE5C; --cat-appt:#F5D33F; --cat-insta:#ECECEC;
   color-scheme:dark }
 
 *{box-sizing:border-box}
@@ -318,6 +321,8 @@ const S = {
 
 function catColor(cat){
   if (!cat) return 'var(--muted)';
+  const fixed = { '영상': 'var(--cat-video)', '약속': 'var(--cat-appt)', '인스타툰': 'var(--cat-insta)' };
+  if (fixed[cat.trim()]) return fixed[cat.trim()];
   let h = 0; for (const ch of cat) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return 'var(--c' + (h % 6) + ')';
 }
